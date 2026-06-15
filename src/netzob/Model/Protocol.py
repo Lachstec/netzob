@@ -1,10 +1,10 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #|          01001110 01100101 01110100 01111010 01101111 01100010            |
 #|                                                                           |
 #|               Netzob : Inferring communication protocols                  |
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| Copyright (C) 2011-2017 Georges Bossert and Frédéric Guihéry              |
 #| This program is free software: you can redistribute it and/or modify      |
 #| it under the terms of the GNU General Public License as published by      |
@@ -18,36 +18,47 @@
 #|                                                                           |
 #| You should have received a copy of the GNU General Public License         |
 #| along with this program. If not, see <http://www.gnu.org/licenses/>.      |
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| @url      : http://www.netzob.org                                         |
 #| @contact  : contact@netzob.org                                            |
 #| @sponsors : Amossys, http://www.amossys.fr                                |
 #|             Supélec, http://www.rennes.supelec.fr/ren/rd/cidre/           |
 #|             ANSSI,   https://www.ssi.gouv.fr                              |
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| File contributors :                                                       |
 #|       - Georges Bossert <georges.bossert (a) supelec.fr>                  |
 #|       - Frédéric Guihéry <frederic.guihery (a) amossys.fr>                |
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| Standard library imports                                                  |
-#+---------------------------------------------------------------------------+
-import imp
+# +---------------------------------------------------------------------------+
+import importlib.util
+import sys
 from os.path import join
 
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| Related third party imports                                               |
-#+---------------------------------------------------------------------------+
-
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| Local application imports                                                 |
-#+---------------------------------------------------------------------------+
-from netzob.Common.Utils.Decorators import typeCheck, public_api, NetzobLogger
-from netzob.Model.Symbols import Symbols
+# +---------------------------------------------------------------------------+
+from netzob.Common.Utils.Decorators import NetzobLogger, public_api, typeCheck
 from netzob.Model.Grammar.Automata import Automata
+from netzob.Model.Symbols import Symbols
+
+
+def load_source(name, path):
+    """Load and execute a Python source file as a module (imp.load_source replacement)."""
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load source module {name!r} from {path!r}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 @NetzobLogger
@@ -126,7 +137,7 @@ class Protocol(object):
     """
 
     @public_api
-    def __init__(self, name, path_zdl=None):
+    def __init__(self, name, path_zdl: str | None = None):
         self.__name = name
         self.__path_zdl = path_zdl
 
@@ -154,11 +165,12 @@ class Protocol(object):
         <class 'netzob.Model.Vocabulary.Symbol.Symbol'>
 
         """
-        modLoaded = imp.load_source("format", path)
+        modLoaded = load_source("format", path)
         symbols = Symbols(modLoaded.symbols)
         return symbols
 
     def _load_zdl_files(self):
+        assert self.path_zdl is not None
         format_zdl = join(self.path_zdl, self.name + "_format.zdl")
         automata_zdl = join(self.path_zdl, self.name + "_automata.zdl")
 
@@ -169,11 +181,10 @@ class Protocol(object):
             self._initializeAutomata(automata_zdl)
 
     def _initializeSymbols(self, path, modLoaded=None):
-        """Parse a dictionary of symbols from a ZDL file.
-        """
+        """Parse a dictionary of symbols from a ZDL file."""
         if modLoaded is None:
             # Load module from source ZDL file
-            modLoaded = imp.load_source("format", path)
+            modLoaded = load_source("format", path)
 
         self.symbols = Symbols(modLoaded.symbols)
 
@@ -181,10 +192,9 @@ class Protocol(object):
             raise Exception("No symbol defined in '{}'.".format(path))
 
     def _initializeAutomata(self, path):
-        """Parse an automata from a ZDL file.
-        """
+        """Parse an automata from a ZDL file."""
         # Load module from source ZDL file
-        mod = imp.load_source("automata", path)
+        mod = load_source("automata", path)
         self.automata = mod.automata
 
     @property
