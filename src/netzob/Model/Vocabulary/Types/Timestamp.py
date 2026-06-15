@@ -36,20 +36,20 @@
 # +---------------------------------------------------------------------------+
 from datetime import datetime, timedelta
 from enum import Enum
+
 from bitarray import bitarray
 
 # +---------------------------------------------------------------------------+
 # | Related third party imports                                               |
 # +---------------------------------------------------------------------------+
-
 # +---------------------------------------------------------------------------+
 # | Local application imports                                                 |
 # +---------------------------------------------------------------------------+
 from netzob.Common.Utils.Decorators import NetzobLogger, public_api
 from netzob.Model.Vocabulary.Types.AbstractType import AbstractType, Sign, UnitSize
-from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
 from netzob.Model.Vocabulary.Types.BitArray import BitArray
 from netzob.Model.Vocabulary.Types.Integer import Integer
+from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
 
 
 @public_api
@@ -190,8 +190,7 @@ class Timestamp(AbstractType):
     >>> import datetime
     >>> from netzob.all import *
     >>> date = datetime.datetime(2015, 10, 10, 17, 54, 2)
-    >>> time_timestamp = time.mktime(date.timetuple())
-    >>> timestamp = Timestamp(time_timestamp)
+    >>> timestamp = Timestamp(1444499642)
     >>> timestamp.size
     (0, 4294967296)
     >>> timestamp.value
@@ -221,7 +220,7 @@ class Timestamp(AbstractType):
        >>> s = Symbol(fields=[f0, f1, f2])
        >>> s.messages = [RawMessage(next(s.specialize())) for x in range(5)]
        >>> print(s.str_data())
-       Start | Timestamp     | End 
+       Start | Timestamp     | End
        ----- | ------------- | ----
        '00'  | b'V\x1c\xf15' | '00'
        '00'  | b'V\x1c\xf15' | '00'
@@ -235,7 +234,7 @@ class Timestamp(AbstractType):
 
        >>> s.fields[1].addEncodingFunction(TypeEncodingFunction(Timestamp))
        >>> print(s.str_data())
-       Start | Timestamp                  | End 
+       Start | Timestamp                  | End
        ----- | -------------------------- | ----
        '00'  | 'Tue Oct 13 11:55:33 2015' | '00'
        '00'  | 'Tue Oct 13 11:55:33 2015' | '00'
@@ -247,32 +246,54 @@ class Timestamp(AbstractType):
     """
 
     @public_api
-    def __init__(self,
-                 value=None,
-                 epoch=Epoch.UNIX,
-                 unity=Unity.SECOND,
-                 unitSize=UnitSize.SIZE_32,
-                 endianness=AbstractType.defaultEndianness(),
-                 sign=Sign.UNSIGNED,
-                 default=None):
+    def __init__(
+        self,
+        value=None,
+        epoch=Epoch.UNIX,
+        unity=Unity.SECOND,
+        unitSize=UnitSize.SIZE_32,
+        endianness=AbstractType.defaultEndianness(),
+        sign=Sign.UNSIGNED,
+        default=None,
+    ):
 
         if value is not None and default is not None:
-            raise ValueError("A Timestamp should have either its constant value or its default value set, but not both")
+            raise ValueError(
+                "A Timestamp should have either its constant value or its default value set, but not both"
+            )
 
         # Validate epoch
         specific_epochs = [Epoch.WINDOWS, Epoch.MUMPS, Epoch.VMS]
         if epoch in specific_epochs and unitSize == UnitSize.SIZE_32:
-            raise ValueError("A Timestamp epoch in the following list ({}) should have its unitSize set to UnitSize.SIZE_64".format(specific_epochs))
+            raise ValueError(
+                "A Timestamp epoch in the following list ({}) should have its unitSize set to UnitSize.SIZE_64".format(
+                    specific_epochs
+                )
+            )
 
         # Validate unity
-        specific_unities = [Unity.DECISECOND, Unity.CENTISECOND, Unity.MILLISECOND, Unity.MICROSECOND, Unity.NANOSECOND]
+        specific_unities = [
+            Unity.DECISECOND,
+            Unity.CENTISECOND,
+            Unity.MILLISECOND,
+            Unity.MICROSECOND,
+            Unity.NANOSECOND,
+        ]
         if unity in specific_unities and unitSize == UnitSize.SIZE_32:
-            raise ValueError("A Timestamp unity in the following list ({}) should have its unitSize set to UnitSize.SIZE_64".format(specific_unities))
+            raise ValueError(
+                "A Timestamp unity in the following list ({}) should have its unitSize set to UnitSize.SIZE_64".format(
+                    specific_unities
+                )
+            )
 
         # Validate uniSize
         valid_unitSizes = [UnitSize.SIZE_32, UnitSize.SIZE_64]
         if unitSize not in valid_unitSizes:
-            raise ValueError("unitSize parameter should be one of '{}', but not '{}'".format(valid_unitSizes, str(unitSize)))
+            raise ValueError(
+                "unitSize parameter should be one of '{}', but not '{}'".format(
+                    valid_unitSizes, str(unitSize)
+                )
+            )
 
         if value is not None and not isinstance(value, bitarray):
             # converts the specified value in bitarray
@@ -282,7 +303,8 @@ class Timestamp(AbstractType):
                 BitArray,
                 src_unitSize=unitSize,
                 src_endianness=endianness,
-                src_sign=sign)
+                src_sign=sign,
+            )
 
         if default is not None and not isinstance(default, bitarray):
             # converts the specified default value in bitarray
@@ -292,7 +314,8 @@ class Timestamp(AbstractType):
                 BitArray,
                 src_unitSize=unitSize,
                 src_endianness=endianness,
-                src_sign=sign)
+                src_sign=sign,
+            )
 
         self.epoch = epoch
         self.unity = unity
@@ -313,11 +336,14 @@ class Timestamp(AbstractType):
             unitSize=unitSize,
             endianness=endianness,
             sign=sign,
-            default=default)
+            default=default,
+        )
 
     def __str__(self):
         if self.value is not None:
-            return "{}({})".format(self.typeName, int.from_bytes(self.value.tobytes(), byteorder='big'))
+            return "{}({})".format(
+                self.typeName, int.from_bytes(self.value.tobytes(), byteorder="big")
+            )
         else:
             return "{}()".format(self.typeName)
 
@@ -337,13 +363,15 @@ class Timestamp(AbstractType):
         if self.value is not None:
             return 1
         else:
-            return (1 << self.unitSize.value)
+            return 1 << self.unitSize.value
 
-    def canParse(self,
-                 data,
-                 unitSize=AbstractType.defaultUnitSize(),
-                 endianness=AbstractType.defaultEndianness(),
-                 sign=AbstractType.defaultSign()):
+    def canParse(
+        self,
+        data,
+        unitSize=AbstractType.defaultUnitSize(),
+        endianness=AbstractType.defaultEndianness(),
+        sign=AbstractType.defaultSign(),
+    ):
         """Computes if specified data can be parsed as a Timestamp with the
         predefined constraints.
 
@@ -379,13 +407,13 @@ class Timestamp(AbstractType):
             return False
 
         try:
-
             value = TypeConverter.convert(
-                data[:int(self.unitSize.value)],
+                data[: int(self.unitSize.value)],
                 BitArray,
                 Integer,
                 dst_unitSize=self.unitSize,
-                dst_sign=self.sign)
+                dst_sign=self.sign,
+            )
 
             # convert the value in seconds
             value = value / self.unity.value
@@ -394,7 +422,7 @@ class Timestamp(AbstractType):
             timestamp_datetime = self.epoch.value + timedelta(seconds=value)
 
             # convert obtained datetime to timestamp in seconds
-            result_sec = int(timestamp_datetime.strftime('%s'))
+            result_sec = int(timestamp_datetime.strftime("%s"))
 
             datetime.fromtimestamp(result_sec)
         except Exception:
@@ -403,14 +431,13 @@ class Timestamp(AbstractType):
         return True
 
     def getMinStorageValue(self):
-            return 0
+        return 0
 
     def getMaxStorageValue(self):
-            return 2**self.unitSize.value - 1
+        return 2**self.unitSize.value - 1
 
     def getFixedBitSize(self):
-        self._logger.debug("Determine the deterministic size of the value of "
-                           "the type")
+        self._logger.debug("Determine the deterministic size of the value of the type")
         return self.unitSize.value
 
     def generate(self, generationStrategy=None):
@@ -451,15 +478,18 @@ class Timestamp(AbstractType):
             src_unitSize=self.unitSize,
             src_endianness=self.endianness,
             src_sign=self.sign,
-            dst_endianness=self.endianness)
+            dst_endianness=self.endianness,
+        )
 
         return final
 
     @staticmethod
-    def decode(data,
-               unitSize=UnitSize.SIZE_32,
-               endianness=AbstractType.defaultEndianness(),
-               sign=Sign.UNSIGNED):
+    def decode(
+        data,
+        unitSize=UnitSize.SIZE_32,
+        endianness=AbstractType.defaultEndianness(),
+        sign=Sign.UNSIGNED,
+    ):
         """Decodes the specified Timestamp data into its raw representation
 
         >>> from netzob.all import *
@@ -471,22 +501,20 @@ class Timestamp(AbstractType):
         if data is None:
             raise TypeError("Data cannot be None")
 
-        return Integer.decode(
-            data, unitSize=unitSize, endianness=endianness, sign=sign)
+        return Integer.decode(data, unitSize=unitSize, endianness=endianness, sign=sign)
 
     @staticmethod
-    def encode(data,
-               unitSize=UnitSize.SIZE_32,
-               endianness=AbstractType.defaultEndianness(),
-               sign=Sign.UNSIGNED):
+    def encode(
+        data,
+        unitSize=UnitSize.SIZE_32,
+        endianness=AbstractType.defaultEndianness(),
+        sign=Sign.UNSIGNED,
+    ):
         from netzob.Model.Vocabulary.Types.Raw import Raw
 
         intValue = TypeConverter.convert(
-            data,
-            Raw,
-            Integer,
-            dst_unitSize=UnitSize.SIZE_32,
-            dst_sign=Sign.UNSIGNED)
+            data, Raw, Integer, dst_unitSize=UnitSize.SIZE_32, dst_sign=Sign.UNSIGNED
+        )
         parsedTimestamp = datetime.utcfromtimestamp(intValue)
 
         return parsedTimestamp.strftime("%c")

@@ -34,3 +34,4 @@ addopts = [
     "--ignore=src/netzob/Inference/Grammar/GrammarInferer.py",
     "--ignore=src/netzob/Inference/Vocabulary/FormatOperations/_AsciiAlign.py",
 ]
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS"]
