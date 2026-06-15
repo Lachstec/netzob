@@ -34,15 +34,17 @@
 # +---------------------------------------------------------------------------+
 # | Standard library imports                                                  |
 # +---------------------------------------------------------------------------+
+import codecs
+import collections
 import random
 import string
-import collections
-import codecs
 
 # +---------------------------------------------------------------------------+
 # | Related third party imports                                               |
 # +---------------------------------------------------------------------------+
 from bitarray import bitarray
+
+from netzob.Common.Utils.Decorators import NetzobLogger, public_api, typeCheck
 
 # +---------------------------------------------------------------------------+
 # | Local application imports                                                 |
@@ -50,7 +52,6 @@ from bitarray import bitarray
 from netzob.Model.Vocabulary.Domain.Variables.Leafs.Data import Data
 from netzob.Model.Vocabulary.Domain.Variables.Scope import Scope
 from netzob.Model.Vocabulary.Types.AbstractType import AbstractType
-from netzob.Common.Utils.Decorators import NetzobLogger, typeCheck, public_api
 
 
 @NetzobLogger
@@ -199,25 +200,31 @@ class String(AbstractType):
     """
 
     @public_api
-    def __init__(self,
-                 value=None,
-                 nbChars=None,
-                 encoding='utf-8',
-                 eos=None,
-                 unitSize=None,
-                 endianness=AbstractType.defaultEndianness(),
-                 sign=AbstractType.defaultSign(),
-                 default=None):
+    def __init__(
+        self,
+        value=None,
+        nbChars=None,
+        encoding="utf-8",
+        eos=None,
+        unitSize=None,
+        endianness=AbstractType.defaultEndianness(),
+        sign=AbstractType.defaultSign(),
+        default=None,
+    ):
         self.encoding = encoding
         if eos is None:
             eos = []
         self.eos = eos
 
         if value is not None and nbChars is not None:
-            raise ValueError("A String should have either its value or its nbChars set, but not both")
+            raise ValueError(
+                "A String should have either its value or its nbChars set, but not both"
+            )
 
         if value is not None and default is not None:
-            raise ValueError("A String should have either its constant value or its default value set, but not both")
+            raise ValueError(
+                "A String should have either its constant value or its default value set, but not both"
+            )
 
         if value is not None:
             if len(value) == 0:
@@ -225,18 +232,26 @@ class String(AbstractType):
 
         # Convert value to bitarray
         if value is not None and not isinstance(value, bitarray):
-
             # Check if value is correct, and normalize it in str object, and then in bitarray
             if isinstance(value, str):
                 try:
                     value = value.encode(self.encoding)
                 except Exception as e:
-                    raise ValueError("Input value for the following string is incorrect: '{}'. Error: '{}'".format(value, e))
+                    raise ValueError(
+                        "Input value for the following string is incorrect: '{}'. Error: '{}'".format(
+                            value, e
+                        )
+                    )
             else:
-                raise ValueError("Unsupported input format for value: '{}', type: '{}'".format(value, type(value)))
+                raise ValueError(
+                    "Unsupported input format for value: '{}', type: '{}'".format(
+                        value, type(value)
+                    )
+                )
 
-            from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
             from netzob.Model.Vocabulary.Types.BitArray import BitArray
+            from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
+
             value = TypeConverter.convert(
                 value,
                 String,
@@ -246,22 +261,31 @@ class String(AbstractType):
                 src_sign=sign,
                 dst_unitSize=unitSize,
                 dst_endianness=endianness,
-                dst_sign=sign)
+                dst_sign=sign,
+            )
 
         # Convert default value to bitarray
         if default is not None and not isinstance(default, bitarray):
-
             # Check if value is correct, and normalize it in str object, and then in bitarray
             if isinstance(default, str):
                 try:
                     default = default.encode(self.encoding)
                 except Exception as e:
-                    raise ValueError("Input default value for the following string is incorrect: '{}'. Error: '{}'".format(default, e))
+                    raise ValueError(
+                        "Input default value for the following string is incorrect: '{}'. Error: '{}'".format(
+                            default, e
+                        )
+                    )
             else:
-                raise ValueError("Unsupported input format for default value: '{}', type: '{}'".format(default, type(default)))
+                raise ValueError(
+                    "Unsupported input format for default value: '{}', type: '{}'".format(
+                        default, type(default)
+                    )
+                )
 
-            from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
             from netzob.Model.Vocabulary.Types.BitArray import BitArray
+            from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
+
             default = TypeConverter.convert(
                 default,
                 String,
@@ -271,7 +295,8 @@ class String(AbstractType):
                 src_sign=sign,
                 dst_unitSize=unitSize,
                 dst_endianness=endianness,
-                dst_sign=sign)
+                dst_sign=sign,
+            )
 
         # Handle string size if value is None
         if value is None:
@@ -286,16 +311,21 @@ class String(AbstractType):
             unitSize=unitSize,
             endianness=endianness,
             sign=sign,
-            default=default)
+            default=default,
+        )
 
     def __str__(self):
         if self.value is not None:
-            return "{}('{}')".format(self.typeName, self.value.tobytes().decode(self.encoding))
+            return "{}('{}')".format(
+                self.typeName, self.value.tobytes().decode(self.encoding)
+            )
         else:
             if self.size[0] == self.size[1]:
                 return "{}(nbChars={})".format(self.typeName, int(self.size[0] / 8))
             else:
-                return "{}(nbChars=({},{}))".format(self.typeName, int(self.size[0] / 8), int(self.size[1] / 8))
+                return "{}(nbChars=({},{}))".format(
+                    self.typeName, int(self.size[0] / 8), int(self.size[1] / 8)
+                )
 
     def _normalizeNbChars(self, nbChars):
         nbMinBits = None
@@ -309,11 +339,15 @@ class String(AbstractType):
             else:
                 if nbChars[0] is not None:
                     if not isinstance(nbChars[0], int) or nbChars[0] < 0:
-                        raise ValueError("first element of nbChars should be an integer >= 0")
+                        raise ValueError(
+                            "first element of nbChars should be an integer >= 0"
+                        )
                     nbMinBits = nbChars[0] * 8
                 if nbChars[1] is not None:
                     if not isinstance(nbChars[1], int) or nbChars[1] <= 0:
-                        raise ValueError("second element of nbChars should be an integer > 0")
+                        raise ValueError(
+                            "second element of nbChars should be an integer > 0"
+                        )
                     nbMaxBits = nbChars[1] * 8
 
         return (nbMinBits, nbMaxBits)
@@ -372,7 +406,7 @@ class String(AbstractType):
             permitted_values = len(string.printable)
             count = 0
             for i in range(range_min, range_max + 1):
-                count += permitted_values ** i
+                count += permitted_values**i
                 if count > AbstractType.MAXIMUM_POSSIBLE_VALUES:
                     return AbstractType.MAXIMUM_POSSIBLE_VALUES
             return count
@@ -391,8 +425,8 @@ class String(AbstractType):
         True
 
         """
-        from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
         from netzob.Model.Vocabulary.Types.BitArray import BitArray
+        from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
 
         minSize, maxSize = self.size
         if maxSize is None:
@@ -400,7 +434,7 @@ class String(AbstractType):
         if minSize is None:
             minSize = 0
 
-        generatedSize = random.randint(minSize / 8, maxSize / 8)
+        generatedSize = random.randint(minSize // 8, maxSize // 8)
 
         permitted_characters = list(string.printable)
 
@@ -426,7 +460,9 @@ class String(AbstractType):
                     while True:
                         random_content_tmp = random_content
                         for elt in self.eos:
-                            random_content_tmp = random_content_tmp.replace(elt.decode(self.encoding), "")
+                            random_content_tmp = random_content_tmp.replace(
+                                elt.decode(self.encoding), ""
+                            )
                         if len(random_content_tmp) == len(random_content):
                             random_content = random_content_tmp
                             break
@@ -437,7 +473,10 @@ class String(AbstractType):
         if final_character is not None:
             if self.value is None or self.default is not None:
                 # Remove the size of the added terminal character to the original random_content, and add the final character
-                random_content = random_content[:len(random_content) - len(final_character)] + final_character
+                random_content = (
+                    random_content[: len(random_content) - len(final_character)]
+                    + final_character
+                )
             else:
                 random_content += final_character
 
@@ -446,8 +485,7 @@ class String(AbstractType):
         return b_random_content
 
     def getFixedBitSize(self):
-        self._logger.debug("Determine the deterministic size of the value of "
-                           "the type")
+        self._logger.debug("Determine the deterministic size of the value of the type")
         if self.value:
             current_size = len(self.value.tobytes().decode(self.encoding)) * 8
             if len(self.eos) > 0:
@@ -456,8 +494,7 @@ class String(AbstractType):
         elif any(self.size) and self.size[0] == self.size[1]:
             return self.size[0]
         else:
-            raise ValueError("Cannot determine a fixed size for type '{}'"
-                             .format(self))
+            raise ValueError("Cannot determine a fixed size for type '{}'".format(self))
 
     @typeCheck(str)
     def mutate(self, prefixDescription=None):
@@ -475,7 +512,7 @@ class String(AbstractType):
         >>> t = String("helloworld")
         >>> values = t.mutate()
         >>> values['ascii(upper)-bits(littleEndian)']
-        bitarray('00010010101000100011001000110010111100101110101011110010010010100011001000100010')
+        bitarray('01001000010001010100110001001100010011110101011101001111010100100100110001000100')
         >>> values['ascii(inversed)-bits(bigEndian)']
         bitarray('01100100011011000111001001101111011101110110111101101100011011000110010101101000')
 
@@ -490,8 +527,8 @@ class String(AbstractType):
         else:
             prefixDescription += "-"
 
-        from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
         from netzob.Model.Vocabulary.Types.BitArray import BitArray
+        from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
 
         if self.value is None:
             val = self.generate()
@@ -503,34 +540,34 @@ class String(AbstractType):
         mutations = collections.OrderedDict()
 
         mutations["{0}ascii".format(prefixDescription)] = strValue
-        mutations["{0}ascii(inversed)".format(
-            prefixDescription)] = strValue[::-1]
+        mutations["{0}ascii(inversed)".format(prefixDescription)] = strValue[::-1]
         if strValue != strValue.upper():
-            mutations["{0}ascii(upper)".format(
-                prefixDescription)] = strValue.upper()
-            mutations["{0}ascii(inversed-upper)".format(
-                prefixDescription)] = strValue[::-1].upper()
+            mutations["{0}ascii(upper)".format(prefixDescription)] = strValue.upper()
+            mutations["{0}ascii(inversed-upper)".format(prefixDescription)] = strValue[
+                ::-1
+            ].upper()
         if strValue != strValue.lower():
-            mutations["{0}ascii(lower)".format(
-                prefixDescription)] = strValue.lower()
-            mutations["{0}ascii(inversed-lower)".format(
-                prefixDescription)] = strValue[::-1].lower()
+            mutations["{0}ascii(lower)".format(prefixDescription)] = strValue.lower()
+            mutations["{0}ascii(inversed-lower)".format(prefixDescription)] = strValue[
+                ::-1
+            ].lower()
 
         results = collections.OrderedDict()
         for mutationName, mutationValue in list(mutations.items()):
             if type(mutationValue) == "bytes":
                 mutationValue = mutationValue.encode()
-            ba = BitArray(
-                TypeConverter.convert(mutationValue, String, BitArray))
+            ba = BitArray(TypeConverter.convert(mutationValue, String, BitArray))
             results.update(ba.mutate(mutationName))
 
         return results
 
-    def canParse(self,
-                 data,
-                 unitSize=AbstractType.defaultUnitSize(),
-                 endianness=AbstractType.defaultEndianness(),
-                 sign=AbstractType.defaultSign()):
+    def canParse(
+        self,
+        data,
+        unitSize=AbstractType.defaultUnitSize(),
+        endianness=AbstractType.defaultEndianness(),
+        sign=AbstractType.defaultSign(),
+    ):
         """This method returns True if data is a String (utf-8)
 
         **Some examples with bitarray as input**
@@ -591,17 +628,30 @@ class String(AbstractType):
                 try:
                     data = data.decode(self.encoding)
                 except Exception as e:
-                    raise ValueError("Input data for the following string is incorrect: '{}'. Error: '{}'".format(data, e))
+                    raise ValueError(
+                        "Input data for the following string is incorrect: '{}'. Error: '{}'".format(
+                            data, e
+                        )
+                    )
             elif isinstance(data, str):
                 try:
                     data = data.encode(self.encoding)
                 except Exception as e:
-                    raise ValueError("Input data for the following string is incorrect: '{}'. Error: '{}'".format(data, e))
+                    raise ValueError(
+                        "Input data for the following string is incorrect: '{}'. Error: '{}'".format(
+                            data, e
+                        )
+                    )
             else:
-                raise ValueError("Unsupported input format for data: '{}', type: '{}'".format(data, type(data)))
+                raise ValueError(
+                    "Unsupported input format for data: '{}', type: '{}'".format(
+                        data, type(data)
+                    )
+                )
 
-            from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
             from netzob.Model.Vocabulary.Types.BitArray import BitArray
+            from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
+
             data = TypeConverter.convert(
                 data,
                 String,
@@ -611,14 +661,17 @@ class String(AbstractType):
                 src_sign=self.sign,
                 dst_unitSize=self.unitSize,
                 dst_endianness=self.endianness,
-                dst_sign=self.sign)
+                dst_sign=self.sign,
+            )
 
         # Compare with self.value if it is defined
         if self.value is not None:
             if len(self.eos) > 0:
                 for permitted_element in self.eos:
                     tmp_value_bytes = self.value.tobytes() + permitted_element
-                    if tmp_value_bytes.decode(self.encoding) == data.tobytes().decode("utf_8"):
+                    if tmp_value_bytes.decode(self.encoding) == data.tobytes().decode(
+                        "utf_8"
+                    ):
                         return True
                 else:
                     return False
@@ -651,7 +704,7 @@ class String(AbstractType):
         # Verify the terminal character
         if len(self.eos) > 0:
             for permitted_element in self.eos:
-                last_element = rawData[-(len(permitted_element)):]
+                last_element = rawData[-(len(permitted_element)) :]
                 if last_element == permitted_element:
                     break
             else:
@@ -660,10 +713,12 @@ class String(AbstractType):
         return True
 
     @staticmethod
-    def decode(data,
-               unitSize=AbstractType.defaultUnitSize(),
-               endianness=AbstractType.defaultEndianness(),
-               sign=AbstractType.defaultSign()):
+    def decode(
+        data,
+        unitSize=AbstractType.defaultUnitSize(),
+        endianness=AbstractType.defaultEndianness(),
+        sign=AbstractType.defaultSign(),
+    ):
         """This method convert the specified data in python raw format.
 
         >>> from netzob.all import *
@@ -695,10 +750,12 @@ class String(AbstractType):
         return data
 
     @staticmethod
-    def encode(data,
-               unitSize=AbstractType.defaultUnitSize(),
-               endianness=AbstractType.defaultEndianness(),
-               sign=AbstractType.defaultSign()):
+    def encode(
+        data,
+        unitSize=AbstractType.defaultUnitSize(),
+        endianness=AbstractType.defaultEndianness(),
+        sign=AbstractType.defaultSign(),
+    ):
         """This method convert the python raw data to the String.
 
         >>> from netzob.all import *
@@ -724,7 +781,7 @@ class String(AbstractType):
 
         res = ""
         for ordElt in data:
-            if ordElt >= 0x20 and ordElt <= 0x7e:  # means between ' ' and '~'
+            if ordElt >= 0x20 and ordElt <= 0x7E:  # means between ' ' and '~'
                 res += chr(ordElt)
             else:
                 res += "."
@@ -772,12 +829,15 @@ class String(AbstractType):
         for elt in eos:
             # Check that each element is a string
             if isinstance(elt, str):
-
                 # Check if element is correct, and normalize it in str object, and then in bitarray
                 try:
                     elt = elt.encode(self.encoding)
                 except Exception as e:
-                    raise ValueError("Input value for the following string is incorrect: '{}'. Error: '{}'".format(elt, e))
+                    raise ValueError(
+                        "Input value for the following string is incorrect: '{}'. Error: '{}'".format(
+                            elt, e
+                        )
+                    )
 
                 eos_list.append(elt)
             else:
@@ -788,7 +848,9 @@ class String(AbstractType):
                 size_elt = len(elt)
             else:
                 if size_elt != len(elt):
-                    raise Exception("'eos' parameter must be a string list of the same size")
+                    raise Exception(
+                        "'eos' parameter must be a string list of the same size"
+                    )
 
         self.__eos = eos_list
 
@@ -864,7 +926,7 @@ def _test(self):
     >>> symbol = Symbol(fields=[Field(d, str(i)) for i, d in enumerate(domains)])
     >>> data = b''.join(next(f.specialize()) for f in symbol.fields)
     >>> symbol.abstract(data)  #doctest: +ELLIPSIS
-    OrderedDict([('0', b'abcd'), ('1', ...)])
+    OrderedDict({'0': b'abcd', '1': ...})
 
 
     ## String with terminal character as a constant (specialization and abstraction)
@@ -878,7 +940,7 @@ def _test(self):
     True
     >>> symbol = Symbol([Field(s)])
     >>> symbol.abstract(data)  #doctest: +ELLIPSIS
-    OrderedDict([('Field', b'...A')])
+    OrderedDict({'Field': b'...A'})
     >>> data = data[:-1] + b'\t'
     >>> symbol.abstract(data)  #doctest: +ELLIPSIS
     Traceback (most recent call last):
@@ -908,7 +970,7 @@ def _test(self):
     True
     >>> symbol = Symbol([Field(s)])
     >>> symbol.abstract(data)  #doctest: +ELLIPSIS
-    OrderedDict([('Field', ...)])
+    OrderedDict({'Field': ...})
     >>> data = data[:-1] + b'\t'
     >>> structured_data = symbol.abstract(data)  #doctest: +ELLIPSIS
     Traceback (most recent call last):
@@ -928,7 +990,7 @@ def _test(self):
     True
     >>> symbol = Symbol([Field(s)])
     >>> symbol.abstract(data)  #doctest: +ELLIPSIS
-    OrderedDict([('Field', b'...\r\n')])
+    OrderedDict({'Field': b'...\r\n'})
     >>> data = data[:-2] + b'\r\t'
     >>> symbol.abstract(data)  #doctest: +ELLIPSIS
     Traceback (most recent call last):
@@ -960,7 +1022,7 @@ def _test_eos():
     >>> data
     b'john\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field-john', b'john\x00')])
+    OrderedDict({'field-john': b'john\x00'})
 
 
     >>> f = Field(String("john", eos=['!'], encoding="utf_16_be"), name='field-john')
@@ -969,7 +1031,7 @@ def _test_eos():
     >>> data
     b'john!'
     >>> symbol.abstract(data)
-    OrderedDict([('field-john', b'john!')])
+    OrderedDict({'field-john': b'john!'})
 
     # Test exception triggered when using different sizes of eos elements
 
@@ -1004,7 +1066,7 @@ def _test_specialize_abstract():
 
     >>> test_type_specialize_abstract(data_type, parameter_names, functional_combinations_possible_parameters)
 
-     """
+    """
 
 
 def _test_unicode_small_strings():
@@ -1020,7 +1082,7 @@ def _test_unicode_small_strings():
     >>> data
     b'\xff\xfe\x00\x00D\x00\x00\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\xff\xfe\x00\x00D\x00\x00\x00')])
+    OrderedDict({'field1': b'\xff\xfe\x00\x00D\x00\x00\x00'})
 
     ## UTF32_LE
 
@@ -1032,7 +1094,7 @@ def _test_unicode_small_strings():
     >>> data
     b'D\x00\x00\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'D\x00\x00\x00')])
+    OrderedDict({'field1': b'D\x00\x00\x00'})
 
     >>> from netzob.all import *
     >>> domain = String(value="D", encoding="utf_32_le")
@@ -1042,7 +1104,7 @@ def _test_unicode_small_strings():
     >>> data
     b'D\x00\x00\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'D\x00\x00\x00')])
+    OrderedDict({'field1': b'D\x00\x00\x00'})
 
     ## UTF32_BE
 
@@ -1054,7 +1116,7 @@ def _test_unicode_small_strings():
     >>> data
     b'\x00\x00\x00D'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\x00\x00\x00D')])
+    OrderedDict({'field1': b'\x00\x00\x00D'})
 
     >>> from netzob.all import *
     >>> domain = String(value="D", encoding="utf_32_be")
@@ -1064,7 +1126,7 @@ def _test_unicode_small_strings():
     >>> data
     b'\x00\x00\x00D'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\x00\x00\x00D')])
+    OrderedDict({'field1': b'\x00\x00\x00D'})
 
 
     ## UTF16
@@ -1077,7 +1139,7 @@ def _test_unicode_small_strings():
     >>> data
     b'\xff\xfeD\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\xff\xfeD\x00')])
+    OrderedDict({'field1': b'\xff\xfeD\x00'})
 
     ## UTF16_LE
 
@@ -1089,7 +1151,7 @@ def _test_unicode_small_strings():
     >>> data
     b'D\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'D\x00')])
+    OrderedDict({'field1': b'D\x00'})
 
     >>> from netzob.all import *
     >>> domain = String(value="D", encoding="utf_16_le")
@@ -1099,7 +1161,7 @@ def _test_unicode_small_strings():
     >>> data
     b'D\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'D\x00')])
+    OrderedDict({'field1': b'D\x00'})
 
     ## UTF16_BE
 
@@ -1111,7 +1173,7 @@ def _test_unicode_small_strings():
     >>> data
     b'\x00D'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\x00D')])
+    OrderedDict({'field1': b'\x00D'})
 
     >>> from netzob.all import *
     >>> domain = String(value="D", encoding="utf_16_be")
@@ -1121,7 +1183,7 @@ def _test_unicode_small_strings():
     >>> data
     b'\x00D'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\x00D')])
+    OrderedDict({'field1': b'\x00D'})
 
 
     ## UTF8
@@ -1134,7 +1196,7 @@ def _test_unicode_small_strings():
     >>> data
     b'D'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'D')])
+    OrderedDict({'field1': b'D'})
 
     >>> from netzob.all import *
     >>> domain = String(value="D", encoding="utf_8")
@@ -1144,7 +1206,7 @@ def _test_unicode_small_strings():
     >>> data
     b'D'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'D')])
+    OrderedDict({'field1': b'D'})
 
     """
 
@@ -1162,7 +1224,7 @@ def _test_unicode_long_strings():
     >>> data
     b'\xff\xfe\x00\x001\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00\x00\xac \x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\xff\xfe\x00\x001\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00\x00\xac \x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\x00')])
+    OrderedDict({'field1': b'\xff\xfe\x00\x001\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00\x00\xac \x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\x00'})
 
     ## UTF32_LE
 
@@ -1174,7 +1236,7 @@ def _test_unicode_long_strings():
     >>> data
     b'1\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00\x00\xac \x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'1\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00\x00\xac \x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\x00')])
+    OrderedDict({'field1': b'1\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00\x00\xac \x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\x00'})
 
     >>> from netzob.all import *
     >>> domain = String(value="1234é€abcd", encoding="utf_32_le")
@@ -1184,7 +1246,7 @@ def _test_unicode_long_strings():
     >>> data
     b'1\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00\x00\xac \x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'1\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00\x00\xac \x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\x00')])
+    OrderedDict({'field1': b'1\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00\x00\xac \x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\x00'})
 
     ## UTF32_BE
 
@@ -1196,7 +1258,7 @@ def _test_unicode_long_strings():
     >>> data
     b'\x00\x00\x001\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00 \xac\x00\x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\x00\x00\x001\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00 \xac\x00\x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d')])
+    OrderedDict({'field1': b'\x00\x00\x001\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00 \xac\x00\x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d'})
 
     >>> from netzob.all import *
     >>> domain = String(value="1234é€abcd", encoding="utf_32_be")
@@ -1206,7 +1268,7 @@ def _test_unicode_long_strings():
     >>> data
     b'\x00\x00\x001\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00 \xac\x00\x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\x00\x00\x001\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00 \xac\x00\x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d')])
+    OrderedDict({'field1': b'\x00\x00\x001\x00\x00\x002\x00\x00\x003\x00\x00\x004\x00\x00\x00\xe9\x00\x00 \xac\x00\x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d'})
 
 
     ## UTF16
@@ -1219,7 +1281,7 @@ def _test_unicode_long_strings():
     >>> data
     b'\xff\xfe1\x002\x003\x004\x00\xe9\x00\xac a\x00b\x00c\x00d\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\xff\xfe1\x002\x003\x004\x00\xe9\x00\xac a\x00b\x00c\x00d\x00')])
+    OrderedDict({'field1': b'\xff\xfe1\x002\x003\x004\x00\xe9\x00\xac a\x00b\x00c\x00d\x00'})
 
     ## UTF16_LE
 
@@ -1231,7 +1293,7 @@ def _test_unicode_long_strings():
     >>> data
     b'1\x002\x003\x004\x00\xe9\x00\xac a\x00b\x00c\x00d\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'1\x002\x003\x004\x00\xe9\x00\xac a\x00b\x00c\x00d\x00')])
+    OrderedDict({'field1': b'1\x002\x003\x004\x00\xe9\x00\xac a\x00b\x00c\x00d\x00'})
 
     >>> from netzob.all import *
     >>> domain = String(value="1234é€abcd", encoding="utf_16_le")
@@ -1241,7 +1303,7 @@ def _test_unicode_long_strings():
     >>> data
     b'1\x002\x003\x004\x00\xe9\x00\xac a\x00b\x00c\x00d\x00'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'1\x002\x003\x004\x00\xe9\x00\xac a\x00b\x00c\x00d\x00')])
+    OrderedDict({'field1': b'1\x002\x003\x004\x00\xe9\x00\xac a\x00b\x00c\x00d\x00'})
 
     ## UTF16_BE
 
@@ -1253,7 +1315,7 @@ def _test_unicode_long_strings():
     >>> data
     b'\x001\x002\x003\x004\x00\xe9 \xac\x00a\x00b\x00c\x00d'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\x001\x002\x003\x004\x00\xe9 \xac\x00a\x00b\x00c\x00d')])
+    OrderedDict({'field1': b'\x001\x002\x003\x004\x00\xe9 \xac\x00a\x00b\x00c\x00d'})
 
     >>> from netzob.all import *
     >>> domain = String(value="1234é€abcd", encoding="utf_16_be")
@@ -1263,7 +1325,7 @@ def _test_unicode_long_strings():
     >>> data
     b'\x001\x002\x003\x004\x00\xe9 \xac\x00a\x00b\x00c\x00d'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\x001\x002\x003\x004\x00\xe9 \xac\x00a\x00b\x00c\x00d')])
+    OrderedDict({'field1': b'\x001\x002\x003\x004\x00\xe9 \xac\x00a\x00b\x00c\x00d'})
 
 
     ## UTF8
@@ -1276,7 +1338,7 @@ def _test_unicode_long_strings():
     >>> data
     b'1234\xc3\xa9\xe2\x82\xacabcd'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'1234\xc3\xa9\xe2\x82\xacabcd')])
+    OrderedDict({'field1': b'1234\xc3\xa9\xe2\x82\xacabcd'})
 
     >>> from netzob.all import *
     >>> domain = String(value="1234é€abcd", encoding="utf_8")
@@ -1286,6 +1348,6 @@ def _test_unicode_long_strings():
     >>> data
     b'1234\xc3\xa9\xe2\x82\xacabcd'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'1234\xc3\xa9\xe2\x82\xacabcd')])
+    OrderedDict({'field1': b'1234\xc3\xa9\xe2\x82\xacabcd'})
 
     """
