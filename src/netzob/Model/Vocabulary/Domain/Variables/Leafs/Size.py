@@ -1,10 +1,10 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #|          01001110 01100101 01110100 01111010 01101111 01100010            |
 #|                                                                           |
 #|               Netzob : Inferring communication protocols                  |
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| Copyright (C) 2011-2017 Georges Bossert and Frédéric Guihéry              |
 #| This program is free software: you can redistribute it and/or modify      |
 #| it under the terms of the GNU General Public License as published by      |
@@ -18,42 +18,49 @@
 #|                                                                           |
 #| You should have received a copy of the GNU General Public License         |
 #| along with this program. If not, see <http://www.gnu.org/licenses/>.      |
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| @url      : http://www.netzob.org                                         |
 #| @contact  : contact@netzob.org                                            |
 #| @sponsors : Amossys, http://www.amossys.fr                                |
 #|             Supélec, http://www.rennes.supelec.fr/ren/rd/cidre/           |
 #|             ANSSI,   https://www.ssi.gouv.fr                              |
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| File contributors :                                                       |
 #|       - Georges Bossert <georges.bossert (a) supelec.fr>                  |
 #|       - Frédéric Guihéry <frederic.guihery (a) amossys.fr>                |
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| Standard library imports                                                  |
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| Related third party imports                                               |
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 
-#+---------------------------------------------------------------------------+
+# +---------------------------------------------------------------------------+
 #| Local application imports                                                 |
-#+---------------------------------------------------------------------------+
-from netzob.Common.Utils.Decorators import typeCheck, NetzobLogger, public_api
-from netzob.Model.Vocabulary.Domain.Variables.Leafs.AbstractVariableLeaf import AbstractVariableLeaf
-from netzob.Model.Vocabulary.Domain.Variables.Leafs.AbstractRelationVariableLeaf import AbstractRelationVariableLeaf, RelationDependencyException
-from netzob.Model.Vocabulary.Domain.Variables.Nodes.AbstractVariableNode import AbstractVariableNode
+# +---------------------------------------------------------------------------+
+from netzob.Common.Utils.Decorators import NetzobLogger, public_api, typeCheck
+from netzob.Model.Vocabulary.Domain.GenericPath import GenericPath
+from netzob.Model.Vocabulary.Domain.Variables.Leafs.AbstractRelationVariableLeaf import (
+    AbstractRelationVariableLeaf,
+    RelationDependencyException,
+)
+from netzob.Model.Vocabulary.Domain.Variables.Leafs.AbstractVariableLeaf import (
+    AbstractVariableLeaf,
+)
+from netzob.Model.Vocabulary.Domain.Variables.Nodes.AbstractVariableNode import (
+    AbstractVariableNode,
+)
 from netzob.Model.Vocabulary.Domain.Variables.Nodes.Agg import Agg
 from netzob.Model.Vocabulary.Types.AbstractType import AbstractType
-from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
 from netzob.Model.Vocabulary.Types.BitArray import BitArray
-from netzob.Model.Vocabulary.Types.Raw import Raw
 from netzob.Model.Vocabulary.Types.Integer import Integer, uint8
-from netzob.Model.Vocabulary.Domain.GenericPath import GenericPath
+from netzob.Model.Vocabulary.Types.Raw import Raw
+from netzob.Model.Vocabulary.Types.TypeConverter import TypeConverter
 
 
 @NetzobLogger
@@ -224,17 +231,12 @@ class Size(AbstractRelationVariableLeaf):
     >>> data
     b'\x00\x00\x00\x15\x00\x00\x00\x00z\x12\x10\xfe\x9a$)L\xc4\xbfL91'
     >>> symbol.abstract(data)
-    OrderedDict([('f0', b'\x00'), ('f1', b'\x00'), ('len', b'\x00\x15'), ('f3', b'\x00\x00\x00\x00'), ('f4', b'z\x12\x10\xfe\x9a$)L\xc4\xbfL91')])
+    OrderedDict({'f0': b'\x00', 'f1': b'\x00', 'len': b'\x00\x15', 'f3': b'\x00\x00\x00\x00', 'f4': b'z\x12\x10\xfe\x9a$)L\xc4\xbfL91'})
 
     """
 
     @public_api
-    def __init__(self,
-                 targets,
-                 dataType=None,
-                 factor=1. / 8,
-                 offset=0,
-                 name=None):
+    def __init__(self, targets, dataType=None, factor=1.0 / 8, offset=0, name=None):
 
         if dataType is None:
             dataType = uint8()
@@ -243,7 +245,9 @@ class Size(AbstractRelationVariableLeaf):
             unitsize = AbstractType.computeUnitSize(max_buffer_size)
             dataType.unitSize = unitsize
 
-        super(Size, self).__init__(self.__class__.__name__, dataType=dataType, targets=targets, name=name)
+        super(Size, self).__init__(
+            self.__class__.__name__, dataType=dataType, targets=targets, name=name
+        )
         self.factor = factor
         self.offset = offset
 
@@ -260,7 +264,13 @@ class Size(AbstractRelationVariableLeaf):
         if self in map_objects:
             return map_objects[self]
 
-        new_size = Size([], dataType=self.dataType, factor=self.factor, offset=self.offset, name=self.name)
+        new_size = Size(
+            [],
+            dataType=self.dataType,
+            factor=self.factor,
+            offset=self.offset,
+            name=self.name,
+        )
         map_objects[self] = new_size
 
         new_targets = []
@@ -274,16 +284,22 @@ class Size(AbstractRelationVariableLeaf):
         new_size.targets = new_targets
         return new_size
 
-    def __computeExpectedValue_stage1(self, targets, parsingPath, remainingVariables, preset=None):
+    def __computeExpectedValue_stage1(
+        self, targets, parsingPath, remainingVariables, preset=None
+    ):
         """
         Compute the total size of targets
         """
         size = 0
 
         from netzob.Fuzzing.Mutators.DomainMutator import FuzzingMode
-        for variable in targets:
 
-            if preset is not None and preset.get(variable) is not None and preset.get(variable).mode == FuzzingMode.FIXED:
+        for variable in targets:
+            if (
+                preset is not None
+                and preset.get(variable) is not None
+                and preset.get(variable).mode == FuzzingMode.FIXED
+            ):
                 remainingVariables.append(variable)
 
             elif parsingPath.hasData(variable) or variable is self:
@@ -300,9 +316,12 @@ class Size(AbstractRelationVariableLeaf):
             elif isinstance(variable, AbstractVariableNode):
                 if isinstance(variable, Agg):
                     size += self.__computeExpectedValue_stage1(
-                        variable.children, parsingPath, remainingVariables)
+                        variable.children, parsingPath, remainingVariables
+                    )
                 else:
-                    error_message = "The following variable has no value: '{}' for field '{}'".format(variable, variable.field)
+                    error_message = "The following variable has no value: '{}' for field '{}'".format(
+                        variable, variable.field
+                    )
                     self._logger.debug(error_message)
                     raise RelationDependencyException(error_message, variable)
             else:
@@ -317,7 +336,6 @@ class Size(AbstractRelationVariableLeaf):
         size = 0
 
         for variable in remainingVariables:
-
             # Retrieve variable value
             if variable is self:
                 value = self.dataType.generate()
@@ -325,7 +343,9 @@ class Size(AbstractRelationVariableLeaf):
                 if parsingPath.hasData(variable):
                     value = parsingPath.getData(variable)
                 else:
-                    error_message = "The following variable has no value: '{}' for field '{}'".format(variable, variable.field)
+                    error_message = "The following variable has no value: '{}' for field '{}'".format(
+                        variable, variable.field
+                    )
                     self._logger.debug(error_message)
                     raise RelationDependencyException(error_message, variable)
 
@@ -339,34 +359,56 @@ class Size(AbstractRelationVariableLeaf):
 
     @typeCheck(GenericPath)
     def computeExpectedValue(self, parsingPath, preset=None):
-        self._logger.debug("Compute expected value for Size variable '{}' from field '{}'".format(self, self.field))
+        self._logger.debug(
+            "Compute expected value for Size variable '{}' from field '{}'".format(
+                self, self.field
+            )
+        )
 
         # first checks the pointed fields all have a value
         remainingVariables = []
 
-        size = self.__computeExpectedValue_stage1(self.targets, parsingPath, remainingVariables, preset=preset)
+        size = self.__computeExpectedValue_stage1(
+            self.targets, parsingPath, remainingVariables, preset=preset
+        )
         size += self.__computeExpectedValue_stage2(parsingPath, remainingVariables)
         size = int(size * self.factor + self.offset)
 
         # Check if we can encode the size in the Size field structure
-        max_size = (1 << self.dataType.unitSize.value)
+        max_size = 1 << self.dataType.unitSize.value
         if size > max_size:
-            error_message = "The computed size (which is '{}') cannot be encoded in the current Size field".format(size)
+            error_message = "The computed size (which is '{}') cannot be encoded in the current Size field".format(
+                size
+            )
             if self.field is not None and len(self.field.name) > 0:
-                error_message = error_message + " '{}' (which can encode at most a value of '{}').".format(self.field.name, max_size)
+                error_message = (
+                    error_message
+                    + " '{}' (which can encode at most a value of '{}').".format(
+                        self.field.name, max_size
+                    )
+                )
             else:
-                error_message = error_message + " (which can encode at most a value of '{}').".format(max_size)
-            error_message = error_message + " You should consider using a bigger dataType."
+                error_message = (
+                    error_message
+                    + " (which can encode at most a value of '{}').".format(max_size)
+                )
+            error_message = (
+                error_message + " You should consider using a bigger dataType."
+            )
             self._logger.debug(error_message)
             raise ValueError(error_message)
 
-        b = TypeConverter.convert(size, Integer, BitArray,
-                                  src_unitSize=self.dataType.unitSize,
-                                  dst_unitSize=self.dataType.unitSize,
-                                  src_sign=self.dataType.sign,
-                                  dst_sign=self.dataType.sign,
-                                  src_endianness=self.dataType.endianness,
-                                  dst_endianness=self.dataType.endianness)
+        b = TypeConverter.convert(
+            size,
+            Integer,
+            BitArray,
+            src_unitSize=self.dataType.unitSize,
+            dst_unitSize=self.dataType.unitSize,
+            src_sign=self.dataType.sign,
+            dst_sign=self.dataType.sign,
+            src_endianness=self.dataType.endianness,
+            dst_endianness=self.dataType.endianness,
+        )
 
         # add heading '0'
         while len(b) < self.dataType.size[0]:
@@ -382,7 +424,8 @@ class Size(AbstractRelationVariableLeaf):
     def __str__(self):
         """The str method."""
         return "Size({0}) - Type:{1}".format(
-            str([v.name for v in self.targets]), self.dataType)
+            str([v.name for v in self.targets]), self.dataType
+        )
 
     @property
     def dataType(self):
@@ -401,8 +444,7 @@ class Size(AbstractRelationVariableLeaf):
             raise TypeError("Datatype cannot be None")
         size = dataType.unitSize
         if size is None:
-            raise ValueError(
-                "The datatype of a Size field must declare its unitSize")
+            raise ValueError("The datatype of a Size field must declare its unitSize")
         self.__dataType = dataType
 
     @property
@@ -439,7 +481,8 @@ class Size(AbstractRelationVariableLeaf):
     def offset(self, offset):
         if offset is None:
             raise TypeError(
-                "Offset cannot be None, use 0 if no offset should be applied.")
+                "Offset cannot be None, use 0 if no offset should be applied."
+            )
         self.__offset = offset
 
 
@@ -559,7 +602,7 @@ def _test_size():
     >>> data = next(symbol_udp.specialize(preset))
     >>>
     >>> symbol_udp.abstract(data)  # doctest: +ELLIPSIS
-    OrderedDict([('udp.sport', b'...'), ('udp.dport', b'...'), ('udp.length', b'\x00\x15'), ('udp.checksum', b'...'), ('udp.payload', b'test AAAAAAAA')])
+    OrderedDict({'udp.sport': b'!?', 'udp.dport': b'\x19\xe4', 'udp.length': b'\x00\x15', 'udp.checksum': b'\xf2I', 'udp.payload': b'test AAAAAAAA'})
 
     """
 
@@ -623,7 +666,7 @@ def _test_size_contains_itself():
     >>> data
     b'\x00\x00\x00\x17\x00\x00\x00\x00\x07i\xec\xfb\x8eR\x11\xfa\xa7&\x7f\xb8\x16\xd7G'
     >>> symbol.abstract(data)
-    OrderedDict([('f0', b'\x00'), ('f1', b'\x00'), ('len', b'\x00\x17'), ('f3', b'\x00\x00\x00\x00'), ('f4', b'\x07i\xec\xfb\x8eR\x11\xfa\xa7&\x7f\xb8\x16\xd7G')])
+    OrderedDict({'f0': b'\x00', 'f1': b'\x00', 'len': b'\x00\x17', 'f3': b'\x00\x00\x00\x00', 'f4': b'\x07i\xec\xfb\x8eR\x11\xfa\xa7&\x7f\xb8\x16\xd7G'})
 
 
     # In little endian
@@ -640,7 +683,7 @@ def _test_size_contains_itself():
     >>> data
     b'\x00\x00\r\x00\x00\x00\x00\x00\x9b\xb9D\xe9z'
     >>> symbol.abstract(data)
-    OrderedDict([('f0', b'\x00'), ('f1', b'\x00'), ('len', b'\r\x00'), ('f3', b'\x00\x00\x00\x00'), ('f4', b'\x9b\xb9D\xe9z')])
+    OrderedDict({'f0': b'\x00', 'f1': b'\x00', 'len': b'\r\x00', 'f3': b'\x00\x00\x00\x00', 'f4': b'\x9b\xb9D\xe9z'})
 
     """
 

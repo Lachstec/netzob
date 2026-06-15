@@ -45,7 +45,7 @@ from bitarray import bitarray
 # +---------------------------------------------------------------------------+
 # | Local application imports                                                 |
 # +---------------------------------------------------------------------------+
-from netzob.Common.Utils.Decorators import typeCheck, NetzobLogger, public_api
+from netzob.Common.Utils.Decorators import NetzobLogger, public_api, typeCheck
 from netzob.Model.Vocabulary.Types.AbstractType import AbstractType
 
 
@@ -141,7 +141,7 @@ class BitArray(AbstractType):
     7992
     >>> len(i.generate().tobytes())
     4529
-    
+
     The following example shows how to define a BitArray
     containing a fixed constant.
 
@@ -200,16 +200,16 @@ class BitArray(AbstractType):
     Bitarray elements can be accessed in read or write mode:
 
     >>> b['Urgent flag']
-    False
+    0
     >>> b['Urgent flag'] = True
     >>> b['Urgent flag']
-    True
+    1
 
     Bitarray elements can be used with binary operators:
 
     >>> b['Urgent flag'] |= b['Data flag']
     >>> b['Urgent flag']
-    True
+    1
 
 
     **Using a default value**
@@ -227,10 +227,14 @@ class BitArray(AbstractType):
     def __init__(self, value=None, nbBits=None, default=None):
 
         if value is not None and nbBits is not None:
-            raise ValueError("A BitArray should have either its value or its nbBits set, but not both")
+            raise ValueError(
+                "A BitArray should have either its value or its nbBits set, but not both"
+            )
 
         if value is not None and default is not None:
-            raise ValueError("A BitArray should have either its constant value or its default value set, but not both")
+            raise ValueError(
+                "A BitArray should have either its constant value or its default value set, but not both"
+            )
 
         if value is not None:
             if len(value) == 0:
@@ -238,27 +242,41 @@ class BitArray(AbstractType):
 
         # Handle input value
         if value is not None and not isinstance(value, bitarray):
-
             # Check if value is correct, and normalize it in str object, and then in bitarray
             if isinstance(value, str):
                 try:
                     value = bitarray(value)
                 except Exception as e:
-                    raise ValueError("Input value for the following BitArray is incorrect: '{}'. Error: '{}'".format(value, e))
+                    raise ValueError(
+                        "Input value for the following BitArray is incorrect: '{}'. Error: '{}'".format(
+                            value, e
+                        )
+                    )
             else:
-                raise ValueError("Unsupported input format for value: '{}', type: '{}'".format(value, type(value)))
+                raise ValueError(
+                    "Unsupported input format for value: '{}', type: '{}'".format(
+                        value, type(value)
+                    )
+                )
 
         # Handle input value
         if default is not None and not isinstance(default, bitarray):
-
             # Check if default value is correct, and normalize it in str object, and then in bitarray
             if isinstance(default, str):
                 try:
                     default = bitarray(default)
                 except Exception as e:
-                    raise ValueError("Input default value for the following BitArray is incorrect: '{}'. Error: '{}'".format(default, e))
+                    raise ValueError(
+                        "Input default value for the following BitArray is incorrect: '{}'. Error: '{}'".format(
+                            default, e
+                        )
+                    )
             else:
-                raise ValueError("Unsupported input format for default value: '{}', type: '{}'".format(default, type(default)))
+                raise ValueError(
+                    "Unsupported input format for default value: '{}', type: '{}'".format(
+                        default, type(default)
+                    )
+                )
 
         # Normalize nbBits
         if value is None:
@@ -266,8 +284,12 @@ class BitArray(AbstractType):
         else:
             nbBits = (len(value), len(value))
 
-        super(BitArray, self).__init__(self.__class__.__name__, value, nbBits, default=default)
-        self.constants = None  # A list of named constant used to access the bitarray elements
+        super(BitArray, self).__init__(
+            self.__class__.__name__, value, nbBits, default=default
+        )
+        self.constants = (
+            None  # A list of named constant used to access the bitarray elements
+        )
 
         # When value is not None, we can access each element of the bitarray with named constants
         if value is not None:
@@ -279,24 +301,32 @@ class BitArray(AbstractType):
             if self.value is not None:
                 return self.value[key]
             else:
-                raise ValueError("Cannot access internal bitarray value, as it does not exist.")
+                raise ValueError(
+                    "Cannot access internal bitarray value, as it does not exist."
+                )
         else:
             if self.constants is not None:
                 return self.value[self.constants.index(key)]
             else:
-                raise ValueError("Named constant access to bitarray elements is not possible, as bitarray is not of fixed length.")
+                raise ValueError(
+                    "Named constant access to bitarray elements is not possible, as bitarray is not of fixed length."
+                )
 
     def __setitem__(self, key, value):
         if isinstance(key, int):
             if self.value is not None:
                 self.value[key] = value
             else:
-                raise ValueError("Cannot access internal bitarray value, as it does not exist.")
+                raise ValueError(
+                    "Cannot access internal bitarray value, as it does not exist."
+                )
         else:
             if self.constants is not None:
                 self.value[self.constants.index(key)] = value
             else:
-                raise ValueError("Named constant access to bitarray elements is not possible, as bitarray is not of fixed length.")
+                raise ValueError(
+                    "Named constant access to bitarray elements is not possible, as bitarray is not of fixed length."
+                )
 
     def _normalizeNbBits(self, nbBits):
         nbMinBit = 0
@@ -310,11 +340,15 @@ class BitArray(AbstractType):
             else:
                 if nbBits[0] is not None:
                     if not isinstance(nbBits[0], int) or nbBits[0] < 0:
-                        raise ValueError("first element of nbBits should be an integer >= 0")
+                        raise ValueError(
+                            "first element of nbBits should be an integer >= 0"
+                        )
                     nbMinBit = nbBits[0]
                 if nbBits[1] is not None:
                     if not isinstance(nbBits[1], int) or nbBits[1] <= 0:
-                        raise ValueError("second element of nbBits should be an integer > 0")
+                        raise ValueError(
+                            "second element of nbBits should be an integer > 0"
+                        )
                     nbMaxBit = nbBits[1]
 
         return (nbMinBit, nbMaxBit)
@@ -349,16 +383,18 @@ class BitArray(AbstractType):
             permitted_values = 2
             count = 0
             for i in range(range_min, range_max + 1):
-                count += permitted_values ** i
+                count += permitted_values**i
                 if count > AbstractType.MAXIMUM_POSSIBLE_VALUES:
                     return AbstractType.MAXIMUM_POSSIBLE_VALUES
             return count
 
-    def canParse(self,
-                 data,
-                 unitSize=AbstractType.defaultUnitSize(),
-                 endianness=AbstractType.defaultEndianness(),
-                 sign=AbstractType.defaultSign()):
+    def canParse(
+        self,
+        data,
+        unitSize=AbstractType.defaultUnitSize(),
+        endianness=AbstractType.defaultEndianness(),
+        sign=AbstractType.defaultSign(),
+    ):
         """For the moment its always true because we consider
         the decimal type to be very similar to the raw type.
 
@@ -388,8 +424,9 @@ class BitArray(AbstractType):
             raise TypeError("data cannot be None")
 
         if not isinstance(data, bitarray):
-            raise TypeError("Data should be a python raw ({0}:{1})".format(
-                data, type(data)))
+            raise TypeError(
+                "Data should be a python raw ({0}:{1})".format(data, type(data))
+            )
 
         if len(data) == 0:
             return False
@@ -412,8 +449,7 @@ class BitArray(AbstractType):
         return True
 
     def generate(self, generationStrategy=None):
-        """Generates a random bitarray that respects the constraints.
-        """
+        """Generates a random bitarray that respects the constraints."""
 
         if self.value is not None:
             return self.value
@@ -431,10 +467,12 @@ class BitArray(AbstractType):
 
     @staticmethod
     @typeCheck(bitarray)
-    def decode(data,
-               unitSize=AbstractType.defaultUnitSize(),
-               endianness=AbstractType.defaultEndianness(),
-               sign=AbstractType.defaultSign()):
+    def decode(
+        data,
+        unitSize=AbstractType.defaultUnitSize(),
+        endianness=AbstractType.defaultEndianness(),
+        sign=AbstractType.defaultSign(),
+    ):
         """This method convert the specified data in python raw format.
 
         >>> from netzob.all import *
@@ -466,10 +504,12 @@ class BitArray(AbstractType):
         return data.tobytes()
 
     @staticmethod
-    def encode(data,
-               unitSize=AbstractType.defaultUnitSize(),
-               endianness=AbstractType.defaultEndianness(),
-               sign=AbstractType.defaultSign()):
+    def encode(
+        data,
+        unitSize=AbstractType.defaultUnitSize(),
+        endianness=AbstractType.defaultEndianness(),
+        sign=AbstractType.defaultSign(),
+    ):
         """This method convert the python raw data to the BitArray.
 
         >>> from netzob.all import *
@@ -498,7 +538,11 @@ class BitArray(AbstractType):
         elif isinstance(data, str):
             norm_data = bytes(data, "utf-8")
         else:
-            raise TypeError("Invalid type for: '{}'. Expected bytes or str, and got '{}'".format(data, type(data)))
+            raise TypeError(
+                "Invalid type for: '{}'. Expected bytes or str, and got '{}'".format(
+                    data, type(data)
+                )
+            )
 
         b = bitarray()
         b.frombytes(norm_data)
@@ -541,6 +585,7 @@ def _test():
 
     """
 
+
 def _test_bit_size():
     r"""
 
@@ -558,6 +603,7 @@ def _test_bit_size():
     64
 
     """
+
 
 def _test_bit_named_const():
     r"""
@@ -581,6 +627,7 @@ def _test_bit_named_const():
 
     """
 
+
 def _test_bit_operations():
     r"""
     # test capability to affect value to named bits, potentially with boolean operators
@@ -597,12 +644,12 @@ def _test_bit_operations():
     >>> b['Data flag'] = True
     >>> b['Urgent flag'] |= b['Data flag']
     >>> b['Urgent flag']
-    True
+    1
     >>> b['Urgent flag'] = False
     >>> b['Data flag'] = True
     >>> b['Urgent flag'] |= b['Data flag']
     >>> b['Urgent flag']
-    True
+    1
     """
 
 
@@ -661,7 +708,7 @@ def _test_symbol():
     >>> data
     b'\xed'
     >>> symbol.abstract(data)
-    OrderedDict([('field1', b'\xe0'), ('field2', b'h')])
+    OrderedDict({'field1': b'\xe0', 'field2': b'h'})
 
     """
 
@@ -694,7 +741,7 @@ def _test_field_aligned_bitarrays():
     >>> data
     b'\xbe\xd6'
     >>> f.abstract(data)
-    OrderedDict([('field1', b'\xa0'), ('field2', b'\xf6\xb0')])
+    OrderedDict({'field1': b'\xa0', 'field2': b'\xf6\xb0'})
 
     >>> domain1 = BitArray(nbBits=3)
     >>> domain2 = BitArray(nbBits=5)
@@ -703,7 +750,7 @@ def _test_field_aligned_bitarrays():
     >>> data
     b'\x17'
     >>> f.abstract(data)
-    OrderedDict([('Field', b'\x17')])
+    OrderedDict({'Field': b'\x17'})
 
     >>> domain1 = BitArray(nbBits=27)
     >>> domain2 = BitArray(nbBits=5)
@@ -714,6 +761,6 @@ def _test_field_aligned_bitarrays():
     >>> data
     b"H\xc6'\xa7"
     >>> f.abstract(data)
-    OrderedDict([('Field', b"H\xc6'\xa7")])
+    OrderedDict({'Field': b"H\xc6'\xa7"})
 
     """
