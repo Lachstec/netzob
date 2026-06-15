@@ -21,3 +21,16 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = ["sphinx>=7", "sphinx-book-theme"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["src/netzob"]
+addopts = [
+    "--doctest-modules",
+    "--ignore=src/netzob/Inference/Grammar/GrammarInferer.py",
+    "--ignore=src/netzob/Inference/Vocabulary/FormatOperations/_AsciiAlign.py",
+]
